@@ -71,4 +71,5 @@ if checked_before ; then
 else
   echo "No file, create one"
   system_check
+  echo "System is fine you can run script to get dump"
 fi
