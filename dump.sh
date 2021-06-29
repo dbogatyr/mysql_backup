@@ -8,7 +8,7 @@ MYSQL_PORT=3306
 REDIS_SERVER=localhost
 REDIS_PORT=6371
 MYSQL_DB_NAME=mysql
-REDIS_DUMP_NAME=dump.rdb
+REDIS_DUMP_NAME=appendonly.aof
 BACKUP_PATH=$HOME/backup_databases
 REDIS_DOCKER_PATH_SAVE=/var/lib/docker/volumes/redis-slave-data/_data
 dump_mysql() {
@@ -20,16 +20,15 @@ dump_mysql() {
   mysqldump -h $1 -P $2 --protocol=tcp -uroot -proot $3 > $BACKUP_PATH/$3.sql
   ## Uncomment me when USER/PASSWORD variables will be assigned and delete the line above
   ## mysqldump -h $1 -P $2 --protocol=tcp -u$USER -p$PASSWORD $3 > $BACKUP_PATH/$3.sql
-  tar zcvf $BACKUP_PATH/$(date +"%Y%m%d").tar.gz -C $BACKUP_PATH $3.sql
+  tar zcvf $BACKUP_PATH/$(date +"%Y%m%d").$3.sql.tar.gz -C $BACKUP_PATH $3.sql
   rm -f $BACKUP_PATH/$3.sql
 }
 
 dump_redis() {
 
-  # $1: Redis server
-  # $2: Redis port
-  redis-cli -h $1 -p $2 save
   cp $REDIS_DOCKER_PATH_SAVE/$REDIS_DUMP_NAME $BACKUP_PATH/$REDIS_DUMP_NAME
+  tar zcvf $BACKUP_PATH/$(date +"%Y%m%d").$REDIS_DUMP_NAME.tar.gz -C $BACKUP_PATH $REDIS_DUMP_NAME
+  rm -f $BACKUP_PATH/$REDIS_DUMP_NAME
 }
 
 
