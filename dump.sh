@@ -3,12 +3,15 @@
 ## USER=
 ## PASSWORD=
 
-SERVER=localhost
-PORT=3306
-
-DB_NAME=mysql
-BACKUP_PATH=$HOME/backup_mysql
-dump() {
+MYSQL_SERVER=localhost
+MYSQL_PORT=3306
+REDIS_SERVER=localhost
+REDIS_PORT=6371
+MYSQL_DB_NAME=mysql
+REDIS_DUMP_NAME=dump.rdb
+BACKUP_PATH=$HOME/backup_databases
+REDIS_DOCKER_PATH_SAVE=/var/lib/docker/volumes/redis-slave-data/_data
+dump_mysql() {
 
   # $1: server name
   # $2: server port
@@ -19,19 +22,26 @@ dump() {
   ## mysqldump -h $1 -P $2 --protocol=tcp -u$USER -p$PASSWORD $3 > $BACKUP_PATH/$3.sql
   tar zcvf $BACKUP_PATH/$(date +"%Y%m%d").tar.gz -C $BACKUP_PATH $3.sql
   rm -f $BACKUP_PATH/$3.sql
-
 }
+
+dump_redis() {
+
+  # $1: Redis server
+  # $2: Redis port
+  redis-cli -h $1 -p $2 save
+  cp $REDIS_DOCKER_PATH_SAVE/$REDIS_DUMP_NAME $BACKUP_PATH/$REDIS_DUMP_NAME
+}
+
 
 delete_older_backups() {
 
   find $BACKUP_PATH/* -mtime +14 -exec rm -rf {} \;
 }
 
-
 system_check() {
 
-  mysql_exist=/usr/bin/mysqldump
-  if [[ -f $mysql_exist ]]; then
+  mysql_exists=/usr/bin/mysqldump
+  if [[ -f $mysql_exists ]]; then
     echo "Mysqldump is installed"
   else
     echo "Mysqldump is not installed"
@@ -40,7 +50,16 @@ system_check() {
     # For debian
     sudo apt-get install mysql-client -y
   fi
-
+  redis_exists=/usr/bin/redis-cli
+  if [[ -f $redis_exists ]] ; then
+    echo "Redis cli is isntalled"
+  else
+    echo "Redis cli is not installed"
+    # For centos os
+    # sudo yum install redis
+    # For debian
+     sudo apt install redis-server
+  fi
   if [[ -f $BACKUP_PATH ]]; then
     return 0
   else
@@ -48,9 +67,7 @@ system_check() {
     chown $(whoami):$(whoami) -R $BACKUP_PATH
     chmod 777 -R $BACKUP_PATH
   fi
-
   cp $(basename $0) $BACKUP_PATH/$(basename $0)
-
 }
 
 checked_before() {
@@ -66,7 +83,8 @@ checked_before() {
 
 if checked_before ; then
   echo "File exists"
-  dump $SERVER $PORT $DB_NAME
+  dump_mysql $MYSQL_SERVER $MYSQL_PORT $MYSQL_DB_NAME
+  dump_redis $REDIS_SERVER $REDIS_PORT
   delete_older_backups
 else
   echo "No file, create one"
