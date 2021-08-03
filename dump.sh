@@ -17,7 +17,7 @@ dump_mysql() {
   # $2: server port
   # $3: database name
   echo "Dump is started... "
-  mysqldump -h $1 -P $2 --protocol=tcp -uroot -proot $3 > $BACKUP_PATH/$3.sql
+  mysqldump --column-statistics=0 -h $1 -P $2 --protocol=tcp -uroot -proot $3 > $BACKUP_PATH/$3.sql
   ## Uncomment me when USER/PASSWORD variables will be assigned and delete the line above
   ## mysqldump -h $1 -P $2 --protocol=tcp -u$USER -p$PASSWORD $3 > $BACKUP_PATH/$3.sql
   tar zcvf $BACKUP_PATH/$(date +"%Y%m%d").$3.sql.tar.gz -C $BACKUP_PATH $3.sql
